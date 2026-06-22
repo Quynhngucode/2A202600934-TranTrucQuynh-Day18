@@ -8,16 +8,37 @@ Jupyter / Python was launched from. Used by all NB*/lite notebooks:
 
 Why: the prior pattern `sys.path.insert(0, "../scripts")` is *cwd-relative*
 and silently breaks if the notebook is run from the repo root or a CI
-runner. `__file__` is stable; cwd is not.
+runner. This helper also tolerates Jupyter contexts where `__file__` is not
+defined.
 """
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-_HERE = Path(__file__).resolve().parent
 _DOCKER = Path("/workspace/scripts")
-_LOCAL = _HERE.parent / "scripts"
 
-_TARGET = _DOCKER if _DOCKER.exists() else _LOCAL
+def _candidate_roots() -> list[Path]:
+    roots: list[Path] = []
+    if "__file__" in globals():
+        roots.append(Path(__file__).resolve().parent)
+    roots.append(Path.cwd().resolve())
+    roots.extend(Path.cwd().resolve().parents)
+    return roots
+
+
+def _find_scripts_dir() -> Path:
+    if _DOCKER.exists():
+        return _DOCKER
+
+    for root in _candidate_roots():
+        candidates = [root / "scripts", root.parent / "scripts"]
+        for candidate in candidates:
+            if (candidate / "lakehouse.py").exists():
+                return candidate
+
+    raise FileNotFoundError("Could not find scripts/lakehouse.py from this notebook context.")
+
+
+_TARGET = _find_scripts_dir()
 sys.path.insert(0, str(_TARGET))

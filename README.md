@@ -25,6 +25,14 @@ make smoke    # ~5 s — verifies the stack works
 make lab      # opens http://localhost:8888
 ```
 
+Windows PowerShell, without `make`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup-windows.ps1
+.\.venv\Scripts\python.exe scripts\verify_lite.py
+.\.venv\Scripts\jupyter.exe lab --notebook-dir=notebooks --ServerApp.token='' --no-browser
+```
+
 Yêu cầu: **Python 3.10–3.13** (pyarrow chưa có wheel cho 3.14 — `make setup` sẽ báo lỗi rõ ràng nếu bạn dùng 3.14; cài `uv` để tự lấy 3.12). Không cần Docker, không cần Java, không cần MinIO.
 
 Khi `make smoke` báo `All checks passed`, mở
